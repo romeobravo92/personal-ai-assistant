@@ -22,24 +22,33 @@ export default function SignUpScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignUp = async () => {
+    setErrorMessage(null);
     if (!email.trim() || !password) {
-      Alert.alert('Error', 'Please enter email and password.');
+      setErrorMessage('Please enter email and password.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
+      setErrorMessage('Password must be at least 6 characters.');
       return;
     }
     setLoading(true);
-    const { error } = await signUp(email.trim(), password);
-    setLoading(false);
-    if (error) {
-      Alert.alert('Sign up failed', error.message);
-    } else {
-      Alert.alert('Check your email', 'Confirm your email to sign in.');
-      navigation.navigate('Login');
+    try {
+      const { error } = await signUp(email.trim(), password);
+      if (error) {
+        setErrorMessage(error.message || 'Sign up failed.');
+      } else {
+        setErrorMessage(null);
+        Alert.alert('Check your email', 'Confirm your email to sign in.');
+        navigation.navigate('Login');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(msg || 'Something went wrong. Try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,6 +90,9 @@ export default function SignUpScreen({ navigation }: Props) {
             <Text style={styles.buttonText}>Sign up</Text>
           )}
         </TouchableOpacity>
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
         <TouchableOpacity
           style={styles.link}
           onPress={() => navigation.navigate('Login')}
@@ -137,6 +149,12 @@ const styles = StyleSheet.create({
     color: colors.buttonPrimaryText,
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorText: {
+    color: colors.neonPink,
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: 'center',
   },
   link: {
     marginTop: 20,

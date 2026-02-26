@@ -1,3 +1,5 @@
+// Load env: .env.build (from Vercel/build script), then .env.local, then .env
+require('dotenv').config({ path: '.env.build' });
 require('dotenv').config({ path: '.env.local' });
 require('dotenv').config(); // .env as fallback
 

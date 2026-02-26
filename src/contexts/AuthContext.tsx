@@ -45,6 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      return {
+        error: new Error(
+          'Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel (Settings → Environment Variables), then redeploy.'
+        ),
+      };
+    }
     try {
       const { error } = await supabase.auth.signUp({ email, password });
       return { error: error ?? null };

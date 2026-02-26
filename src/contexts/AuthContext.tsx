@@ -40,8 +40,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ?? null };
+    if (!isSupabaseConfigured) {
+      return {
+        error: new Error(
+          'Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.'
+        ),
+      };
+    }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error ?? null };
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err : new Error(String(err)),
+      };
+    }
   };
 
   const signUp = async (email: string, password: string) => {

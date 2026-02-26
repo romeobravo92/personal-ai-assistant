@@ -2,5 +2,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "NPM_CONFIG_LOGLEVEL=error npm install"
+  "installCommand": "npm install"
 }

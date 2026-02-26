@@ -7,8 +7,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,21 +17,44 @@ import { colors } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
+function friendlyLoginError(message: string): string {
+  if (message === 'Failed to fetch') {
+    return 'Cannot reach server. Check that SUPABASE_URL and SUPABASE_ANON_KEY are set in Vercel and your Supabase project is active.';
+  }
+  if (message.includes('Invalid login credentials') || message.includes('invalid')) {
+    return 'Wrong email or password. If you just signed up, check your email and confirm your account first.';
+  }
+  if (message.toLowerCase().includes('email') && message.toLowerCase().includes('confirm')) {
+    return 'Please confirm your email using the link we sent you, then try signing in again.';
+  }
+  return message;
+}
+
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    setErrorMessage(null);
     if (!email.trim() || !password) {
-      Alert.alert('Error', 'Please enter email and password.');
+      setErrorMessage('Please enter email and password.');
       return;
     }
     setLoading(true);
-    const { error } = await signIn(email.trim(), password);
-    setLoading(false);
-    if (error) Alert.alert('Login failed', error.message);
+    try {
+      const { error } = await signIn(email.trim(), password);
+      if (error) {
+        setErrorMessage(friendlyLoginError(error.message));
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(friendlyLoginError(msg));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,47 +62,56 @@ export default function LoginScreen({ navigation }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.inner}>
-        <Text style={styles.title}>Personal AI Assistant</Text>
-        <Text style={styles.subtitle}>Sign in</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!loading}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-        />
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.buttonPrimaryText} />
-          ) : (
-            <Text style={styles.buttonText}>Sign in</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.link}
-          onPress={() => navigation.navigate('SignUp')}
-          disabled={loading}
-        >
-          <Text style={styles.linkText}>No account? Sign up</Text>
-        </TouchableOpacity>
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.inner}>
+          <Text style={styles.title}>Personal AI Assistant</Text>
+          <Text style={styles.subtitle}>Sign in</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            editable={!loading}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={colors.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.buttonPrimaryText} />
+            ) : (
+              <Text style={styles.buttonText}>Sign in</Text>
+            )}
+          </TouchableOpacity>
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
+          <TouchableOpacity
+            style={styles.link}
+            onPress={() => navigation.navigate('SignUp')}
+            disabled={loading}
+          >
+            <Text style={styles.linkText}>No account? Sign up</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -88,7 +120,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+    paddingVertical: 24,
   },
   inner: {
     padding: 24,
@@ -128,6 +164,12 @@ const styles = StyleSheet.create({
     color: colors.buttonPrimaryText,
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorText: {
+    color: colors.neonPink,
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: 'center',
   },
   link: {
     marginTop: 20,

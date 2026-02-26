@@ -2,5 +2,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "npm install"
+  "installCommand": "rm -rf node_modules 2>/dev/null; npm install"
 }

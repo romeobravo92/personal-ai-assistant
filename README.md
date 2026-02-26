@@ -15,6 +15,7 @@ Cross-platform assistant (iOS, Android, web) for reminders, motivation, feelings
      - `SUPABASE_URL` — Project URL (Settings → API)
      - `SUPABASE_ANON_KEY` — anon public key
    - Apply the database schema: in the Supabase dashboard go to **SQL Editor**, run the SQL in `supabase/migrations/20250225000000_initial_schema.sql` (creates tables and RLS; also creates a trigger that inserts a profile row when a user signs up).
+   - **Users added in the dashboard:** If you create a user under Authentication → Users, set a password for them (e.g. use "Send password recovery" or the user row actions), or they cannot sign in with email/password.
 
 3. **Run**
    ```bash

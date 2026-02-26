@@ -48,7 +48,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!error && data.session) {
+        setSession(data.session);
+      }
       return { error: error ?? null };
     } catch (err) {
       return {

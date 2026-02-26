@@ -18,16 +18,18 @@ import { colors } from '../theme/colors';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 function friendlyLoginError(message: string): string {
-  if (message === 'Failed to fetch') {
-    return 'Cannot reach server. Check that SUPABASE_URL and SUPABASE_ANON_KEY are set in Vercel and your Supabase project is active.';
+  const m = (message || '').trim();
+  if (!m) return 'Sign in failed. Try again.';
+  if (m === 'Failed to fetch') {
+    return 'Cannot reach server. Check SUPABASE_URL and SUPABASE_ANON_KEY in Vercel and that your Supabase project is active.';
   }
-  if (message.includes('Invalid login credentials') || message.includes('invalid')) {
-    return 'Wrong email or password. If you just signed up, check your email and confirm your account first.';
+  if (m.includes('Invalid login credentials') || m.toLowerCase().includes('invalid')) {
+    return 'Wrong email or password. If this user was added in the Supabase dashboard, set a password: Authentication → Users → your user → Send password recovery (or set password there).';
   }
-  if (message.toLowerCase().includes('email') && message.toLowerCase().includes('confirm')) {
-    return 'Please confirm your email using the link we sent you, then try signing in again.';
+  if (m.toLowerCase().includes('email') && m.toLowerCase().includes('confirm')) {
+    return 'Please confirm your email using the link we sent you, then try again.';
   }
-  return message;
+  return m;
 }
 
 export default function LoginScreen({ navigation }: Props) {
@@ -47,11 +49,12 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       const { error } = await signIn(email.trim(), password);
       if (error) {
-        setErrorMessage(friendlyLoginError(error.message));
+        setErrorMessage(friendlyLoginError(error?.message ?? 'Sign in failed'));
       }
+      // If no error, session should update via onAuthStateChange and we navigate to main app
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(friendlyLoginError(msg));
+      setErrorMessage(friendlyLoginError(msg || 'Something went wrong'));
     } finally {
       setLoading(false);
     }
@@ -170,6 +173,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 12,
     textAlign: 'center',
+    minHeight: 20,
   },
   link: {
     marginTop: 20,
